@@ -1,104 +1,41 @@
-const canvas = document.getElementById("jsCanvas");
-const ctx = canvas.getContext("2d");
-const colors = document.getElementsByClassName("jsColor");
-const range = document.getElementById("jsRange");
-const mode = document.getElementById("jsMode");
-const saveBtn = document.getElementById("jsSave");
+var createError = require('http-errors');
+var express = require('express');
+var path = require('path');
+var cookieParser = require('cookie-parser');
+var logger = require('morgan');
 
-const INITIAL_COLOR = "#2c2c2c";
-const CANVAS_SIZE = 700;
+var indexRouter = require('./routes/index');
+var usersRouter = require('./routes/users');
 
-canvas.width = CANVAS_SIZE;
-canvas.height = CANVAS_SIZE;
+var app = express();
 
-ctx.fillStyle = "white";
-ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-ctx.strokeStyle = INITIAL_COLOR;
-ctx.fillStyle = INITIAL_COLOR;
-ctx.lineWidth = 2.5;
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'jade');
 
-let painting = false;
-let filling = false;
+app.use(logger('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
 
-function stopPainting() {
-    painting = false;
-}
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
 
-function startPainting() {
-    painting = true;
-}
+// catch 404 and forward to error handler
+app.use(function(req, res, next) {
+  next(createError(404));
+});
 
-function onMouseMove(event) {
-    const x = event.offsetX;
-    const y = event.offsetY;
-    if (!painting) {
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-    } else {
-        ctx.lineTo(x, y);
-        ctx.stroke();
-    }
-}
+// error handler
+app.use(function(err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-function handleColorClick(event) {
-    const color = event.target.style.backgroundColor;
-    ctx.strokeStyle = color;
-    ctx.fillStyle = color;
-}
+  // render the error page
+  res.status(err.status || 500);
+  res.render('error');
+});
 
-function handleRangeChange(event) {
-    ctx.lineWidth = event.target.value;
-    ctx.lineWidth = size;
-}
-
-function handleModeClick() {
-    if (filling === true) {
-        filling = false;
-        mode.innerText = "Fill";
-    } else {
-        filling = true;
-        mode.innerText = "Paint";
-    }
-}
-
-function handleCanvasClick() {
-    if (filling) {
-        ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
-    }
-}
-
-function handleCM(event) {
-    event.preventDefault();
-}
-
-function handleSaveClick() {
-    const link = document.createElement("a");
-    link.href = canvas.toDataURL();
-    link.download = "PaintJS[]";
-    link.click();
-}
-
-if (canvas) {
-    canvas.addEventListener("mousemove", onMouseMove);
-    canvas.addEventListener("mousedown", startPainting);
-    canvas.addEventListener("mouseup", stopPainting);
-    canvas.addEventListener("mouseleave", stopPainting);
-    canvas.addEventListener("click", handleCanvasClick);
-    canvas.addEventListener("contextmenu", handleCM);
-}
-
-Array.from(colors).forEach(color =>
-    color.addEventListener("click", handleColorClick)
-);
-
-if (range) {
-    range.addEventListener("input", handleRangeChange);
-}
-
-if (mode) {
-    mode.addEventListener("click", handleModeClick);
-}
-
-if (saveBtn) {
-    saveBtn.addEventListener("click", handleSaveClick);
-}
+module.exports = app;
